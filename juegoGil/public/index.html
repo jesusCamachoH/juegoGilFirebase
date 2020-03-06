@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Juego Firebase</title>
+        <style>
+            *{
+                padding: 0; margin:0;}
+            canvas{
+                background: darkcyan;
+                display: block; 
+                margin:0 auto;
+            }
+            titulo-juego{
+                background-color: bisque;
+                border-radius: 100%;
+                text-align: center;
+            }
+         
+        </style>
+    </head>
+    
+    <body style="background-color:aqua;">
+        <!--Con este scipt trato de aprender clases abstractas-->
+        <script>
+             class MePresento {
+                constructor(nombre) {
+                        this.nombre = nombre;
+                }
+                preséntate() {
+                    document.write(`Hola. Soy ${this.nombre} `);
+                    }
+                    /** @abstract */
+                    hola() { throw new Error("abstract"); }
+            }
+            class Alumno extends MePresento {
+                constructor(nombre) {
+                      super(nombre);
+                }
+                /** @override */
+                hola() { document.write(" Y estoy aprendiendo clases abstractas espero que te guste el pequeño juego que realice :)");}
+            }
+           
+            const alumnos =
+                [new Alumno("Jesus")];
+                for (const alumnos2 of alumnos) {
+                    alumnos2.preséntate();
+                    alumnos2.hola();
+                }
+        </script>        
+        
+        
+        <titulo-juego ></titulo-juego>
+        <canvas id="myCanvas" width="480" height="320"></canvas>
+        <!--Script para crear webcomponent -->
+        <script>
+            class Titulo extends HTMLElement {
+                constructor() {
+                    // Se debe llamar super() siempre que se sobreescriba el constructor
+                    // debe ser antes de cualquier otro código
+                    super();
+                    // Código del componente web puede ser escrito después de esta línea
+                    this.innerHTML = "<h1 style=text.align:center;>!Destruye los ladrillos¡</h1>";
+                    console.log("Espere......"); 
+                };
+            };
+
+            // Agregamos el componente a los elementos perzonalizados o propios
+            customElements.define('titulo-juego', Titulo);
+        </script>
+        <!--Script para generar el juego de Destruccion de ladrillos-->
+        <script>
+            var canvas = document.getElementById("myCanvas");
+            var ctx = canvas.getContext("2d");
+ 	        var radioBola= 10; //radio del circulo.
+            var x = canvas.width/2;
+            var y = canvas.height-30;
+            var dx = 2;
+            var dy = -2;           
+            var alturaPaleta= 10;//altura de la paleta que golpea.
+            var paletaAncho= 75;// ancho de la paleta.
+            var paletaEjex= (canvas.width-paletaAncho)/2;//Dibuja la paleta en el eje de las x.
+            var teclaDerecha = false;
+            var teclaIzquierda =  false;
+
+            var numFilasLadrillo = 3;
+            var numColumLadrillo = 5;
+            var anchoLadrillo = 75;
+            var alturaLadrillo = 20;
+            var separacionLadrillos = 10;
+            var margenSuperiorLad = 30;
+            var margenIzqLad = 30;
+            var marcador = 0;
+            var vida= 3;
+
+            //El código pasará por las filas y las columnas y creará los ladrillos.
+            var ladrillos = [];
+            for(c=0; c< numColumLadrillo; c++){
+                ladrillos[c] = [];
+                for(r=0; r<numFilasLadrillo; r++){
+                    ladrillos[c][r] = {x: 0, y:0, status: 1};
+                }
+            }
+
+            document.addEventListener("keydown",keyDownHandler, false); // cuando oprima la tecla se activara el movimiento.
+            document.addEventListener("keyup",keyUpHandler, false);
+            document.addEventListener("mousemove",mouseMoveHandler,false);
+
+            function keyDownHandler(e) {
+                if(e.keyCode == 39) {//39 es el valor de la flecha derecha
+                    teclaDerecha = true;
+                }
+                else if(e.keyCode == 37) {//37 es el valor de la flecha izquierda
+                    teclaIzquierda = true;
+                }
+            }
+
+            function keyUpHandler(e) {
+                if(e.keyCode == 39) {
+                    teclaDerecha = false;
+                }
+                else if(e.keyCode == 37) {
+                    teclaIzquierda = false;
+                }
+            }
+
+	    function mouseMoveHandler(e){
+                var relativeX  = e.clientX - canvas.offsetLeft;
+                if(relativeX > 0 && relativeX <canvas.width){
+                    paletaEjex = relativeX -paletaAncho/2;
+                }
+            }
+
+
+            //funcion que detecta cuando la pelota choque con un ladrillo.
+            function detectarColision(){
+                for(c=0; c<numColumLadrillo; c++){
+                    for(r=0; r<numFilasLadrillo; r++){
+                        var b = ladrillos[c][r];
+                        if(b.status==1){
+                            if(x > b.x && x < b.x+ anchoLadrillo && y > b.y && y< b.y+alturaLadrillo){
+                                dy = -dy;
+                                b.status=0;
+                                marcador++;
+                                if(marcador== numFilasLadrillo* numColumLadrillo){
+                                    alert("!Ya Ganaste ¡");
+                                    document.location.reload();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            function dibujarBola() {
+                ctx.beginPath();
+                ctx.arc(x, y, radioBola, 0, Math.PI*2);
+                ctx.fillStyle = "white";
+                ctx.fill();
+                ctx.closePath();
+            }
+            function dibujarPaleta(){
+                ctx.beginPath();
+                ctx.rect(paletaEjex, canvas.height-alturaPaleta, paletaAncho, alturaPaleta);
+                ctx.fillStyle = "white";
+                ctx.fill();
+                ctx.closePath();
+            }
+            //Dibujar los ladrillos en pantalla
+            function dibujarLadrillos(){
+                for (c=0; c<numColumLadrillo; c++){
+                    for(r=0;r<numFilasLadrillo; r++){
+                        if(ladrillos[c][r].status==1){// si el status es igual a 1 se dibuja el ladrillo. si no se elimina de la pantalla.
+                            var ladrilloX =(c*(anchoLadrillo + separacionLadrillos))+ margenIzqLad;
+                            var ladrilloY = (r*(alturaLadrillo + separacionLadrillos))+ margenSuperiorLad;
+                            ladrillos[c][r].x=ladrilloX;
+                            ladrillos[c][r].y=ladrilloY;
+                            ctx.beginPath();
+                            ctx.rect(ladrilloX, ladrilloY, anchoLadrillo, alturaLadrillo);
+                            ctx.fillStyle= "white";
+                            ctx.fill();
+                            ctx.closePath();
+                        }
+                            
+                    }
+                }
+            }
+            function dibujarMarcador(){
+                ctx.font=" 16px Arial";
+                ctx.fillStyle= "white";
+                ctx.fillText("Marcador:"+marcador,8,20);//8 y 20 son las coordenadas.
+            }
+            function dibujarVidas(){
+                ctx.font=" 16px Arial";
+                ctx.fillStyle= "white";
+                ctx.fillText("Vidas:"+vida,canvas.width-65,20);//8 y 20 son las coordenadas.
+            }
+
+            function dibujar() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                dibujarLadrillos();
+                dibujarBola();
+                dibujarPaleta()
+                dibujarMarcador();
+                dibujarVidas();
+                detectarColision();
+              
+                if(x+ dx > canvas.width-radioBola || x + dx <radioBola){
+                    dx = -dx;
+                }
+                
+                //if para que rebote en los bordes verticales y diga que perdiste cuando toque el borde inferior.
+                if(y + dy <radioBola){
+                    dy = -dy;
+                } 
+                else if(y+ dy> canvas.height-radioBola){
+                    if(x > paletaEjex && x < paletaEjex + paletaAncho){
+                        dy = -dy;
+                    }
+		            else{
+    	                vida--;
+                        if(!vida) {
+                           alert ("Ya perdiste");
+                           document.location.reload();
+                        }
+                        else {
+                        x= canvas.width/2;
+                        y= canvas.height-30;
+                        dx=3;
+                        dy=-3;
+                        paletaEjex = (canvas.width-paletaAncho)/2;
+                        }
+                    }
+                }
+
+                //Comprueba que se mueva la paleta hacia la derecha
+                if(teclaDerecha && paletaEjex < canvas.width-paletaAncho) {
+                    paletaEjex += 7;//el siete seran los pixeles que se movera.
+                }
+                else if(teclaIzquierda && paletaEjex> 0) {
+                    paletaEjex -= 7;
+                }
+                x += dx;
+                y += dy;
+               
+                requestAnimationFrame(dibujar);
+            }
+         
+            dibujar();
+            
+        </script>
+        <footer style="background-color:white; text-align:center; border-radius:100px ;width:100%" >
+            <script>
+                /** @interface */
+                class PieDeJuego {
+                    mensaje() { throw new Error("Interfaz"); }
+                }
+                /** @implements {Saludo} */
+                class Pie {
+                    /** @override */
+                    mensaje() {
+                        document.write("Juego desarrollado por Jesus Camacho Hernández Itic-901-M ");
+                    }
+                }
+                const mensajes =
+                [new Pie()];
+                for (var men of mensajes) {
+                men.mensaje();
+                }
+            </script>   
+        <footer>
+        <!-- The core Firebase JS SDK is always required and must be listed first -->
+        <script src="/__/firebase/7.10.0/firebase-app.js"></script>
+
+        <!-- TODO: Add SDKs for Firebase products that you want to use
+        https://firebase.google.com/docs/web/setup#available-libraries -->
+
+        <!-- Initialize Firebase -->
+        <script src="/__/firebase/init.js"></script>
+    </body>
+</html>
